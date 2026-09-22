@@ -94,12 +94,9 @@
 //
 
 
-#if SPLINE_BRUTE_FORCE
-#define INTERPOLATE_SEGMENT interpolateBruteForce
-#else
-#define INTERPOLATE_SEGMENT interpolateForwardDifference
-#endif
-
+/// Selects the segment interpolator used by interpolate(): true evaluates the cubic at every
+/// point (interpolateBruteForce), false uses forward differencing (interpolateForwardDifference).
+inline constexpr bool kSplineBruteForce = false;
 
 /// Computes the cubic f(x) = ax^3 + bx^2 + cx + d through (x1, y1) and (x2, y2) with slopes
 /// k1 and k2 at those points.
@@ -260,7 +257,14 @@ template <class PointIter, class PointPlotter> inline void interpolate(PointIter
             k2 = (y(p3) - y(p1)) / (x(p3) - x(p1));
         }
 
-        INTERPOLATE_SEGMENT(x(p1), y(p1), x(p2), y(p2), k1, k2, plot, res);
+        if constexpr(kSplineBruteForce)
+        {
+            interpolateBruteForce(x(p1), y(p1), x(p2), y(p2), k1, k2, plot, res);
+        }
+        else
+        {
+            interpolateForwardDifference(x(p1), y(p1), x(p2), y(p2), k1, k2, plot, res);
+        }
     }
 }
 
