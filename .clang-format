@@ -1,0 +1,94 @@
+---
+# Canonical formatting for first-party code. clang-format 22 or newer.
+# Matches the vcFormat/.editorconfig house style (Allman braces, namespace-indented,
+# no space after control-flow keywords, `int* p`), and adds the one thing vcFormat
+# cannot do: a hard column limit with reflow.
+Language: Cpp
+Standard: Latest
+ColumnLimit: 280
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+LineEnding: LF
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: All
+IndentCaseLabels: false
+IndentPPDirectives: None
+IndentAccessModifiers: false
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+  BeforeLambdaBody: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: false
+  AfterFunctionDefinitionName: false
+  AfterFunctionDeclarationName: false
+  AfterOverloadedOperator: false
+  AfterRequiresInClause: true
+  AfterRequiresInExpression: false
+  BeforeNonEmptyParentheses: false
+
+Cpp11BracedListStyle: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeAssignmentOperators: true
+SpaceAfterCStyleCast: false
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+SpaceInEmptyParentheses: false
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+
+AlignAfterOpenBracket: Align
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 0
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+ReflowComments: Never
+# Guarantee exactly one blank line between consecutive definitions (functions, methods,
+# classes, enums) — a `}` is always separated from the next definition by a blank line.
+SeparateDefinitionBlocks: Always
+
+# Sort includes alphabetically within each block. IncludeBlocks: Preserve keeps the
+# blank-line-separated groups (project headers vs system headers) intact and only
+# orders within a group, so an include cannot jump across a deliberate grouping.
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLine
+BinPackParameters: true
+BinPackArguments: true
+...

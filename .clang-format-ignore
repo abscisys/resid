@@ -1,0 +1,16 @@
+# Paths clang-format must never touch. Honored by the editor (format-on-save),
+# the clang-format CLI, and any CI format gate — a single, reproducible exception list.
+#
+# GROUND RULE: never reformat external or vendored code. Keeping these byte-for-byte
+# as upstream is what lets us diff our ports against the originals.
+#
+# Patterns are globs; `*` stops at a path separator, so `**` is required to match a
+# whole subtree (clang-format 18+ semantics).
+
+
+# NOTHING first-party is excluded any more. The engine was listed here because it
+# was imported verbatim and the diff against upstream was the only way to review
+# it. That diff has since been spent deliberately -- the engine is renamed,
+# namespaced and restructured -- so there is nothing left to protect. Leaving it
+# listed only hid the engine from clang-format while the format gate reported
+# success on files it never opened.

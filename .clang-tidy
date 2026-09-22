@@ -1,0 +1,148 @@
+# .clang-tidy — SynthAxesVST3 first-party lint policy
+#
+# The authority is CLAUDE.md ("C++ Code Generation Rules"). This file mechanises the parts
+# of those rules a linter CAN check -- NAMING plus two CLAUDE.md-specific rules no stock check
+# can express, provided by our own clang-tidy module (build-tools/ClangTidyChecks) -- and adds
+# a curated set of bug/perf checks as a code-smell layer. Run it with lint.ps1 / lint.sh, which
+# build and invoke synthaxes-clang-tidy; it is pinned to LLVM/clang-tidy 22 on the dev machines
+# and CI.
+#
+# THE CUSTOM CHECKS (listed in Checks below) cover what stock clang-tidy cannot:
+#   * synthaxes-explicit-this    -- §5 "always qualify member access with this-> / ClassName::".
+#   * synthaxes-decimal-in-s     -- §6 "wrap every floating-point literal in S(...)".
+#   * synthaxes-accessor-naming  -- an accessor named like its m_ field reads getX()/setX()/isX().
+# The `m_` member prefix (CheckOptions below) remains the anti-shadow half of §5.
+#
+# WHAT CLAUDE.md ASKS THAT STILL CANNOT BE ENFORCED (documented so nobody assumes it is):
+#   * §7 "Doxygen documents only the public API" -- a judgement rule, not machine-checkable.
+#   * §1/§3 file layout and .h/.hpp/.cpp placement -- structural, enforced by CMake/convention.
+#
+# bugprone-easily-swappable-parameters is the one bugprone check we opt OUT of: it fires on the
+# inherent x/y/z-coordinate, a/b-coefficient and freq/phase/depth tuples that pervade numeric
+# DSP signatures (Point3D, the Perlin noiseXBeforeY family, the LFOs, the window initialisers),
+# none of which is an actual defect, and no NOLINT/typedef churn would buy real safety.
+#
+# WarningsAsErrors is empty on purpose: the existing tree predates the linter, so the first
+# job is to MEASURE and FIX, not to break the build. Flip it on (or pass it per-run) once a
+# category reads clean.
+
+Checks: >
+  -*,
+  synthaxes-explicit-this,
+  synthaxes-accessor-naming,
+  synthaxes-decimal-in-s,
+  readability-identifier-naming,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  performance-*,
+  -performance-avoid-endl,
+  misc-definitions-in-headers,
+  misc-misplaced-const,
+  misc-redundant-expression,
+  misc-unused-alias-decls,
+  misc-unused-using-decls
+
+WarningsAsErrors: ''
+FormatStyle: none
+
+# clang-tidy runs a CLANG front-end over a compile database that, on the Linux/CI build, was
+# produced for GCC. GCC-only flags in that database (notably -Wshadow=local) are unknown to
+# clang and, under the build's -Werror, would abort analysis. Neutralise just that: an unknown
+# -W option becomes a no-op instead of an error. (The matching libstdc++ path is machine-
+# specific and is injected by cmake/ClangTidy.cmake via --gcc-install-dir, not here.)
+ExtraArgs:
+  - '-Wno-unknown-warning-option'
+  # The demo apps link VSTGUI's standalone library, which exports /fp:fast as an INTERFACE flag;
+  # our own /fp:precise (the DSP reproducibility rule) sits on the same command. MSVC silently
+  # takes the last /fp (precise wins, the real build is correct), but the lint's clang-cl objects
+  # that the two disagree on complex-number range -- a setting irrelevant to any UI code. It is a
+  # flag collision imported from a dependency, never a first-party code signal, so neutralise it.
+  - '-Wno-overriding-complex-range'
+  # Same origin: the demo targets inherit MSVC driver flags from VSTGUI's standalone lib that
+  # clang-cl parses but does not consume (/MP parallel-build, /ZI edit-and-continue). "argument
+  # unused during compilation" is a driver-level note about those, never a first-party code signal.
+  - '-Wno-unused-command-line-argument'
+
+# Only OUR code. The negative lookahead drops .external/ (VST3 SDK, VSTGUI, GoogleTest, Boost),
+# the vendored CloudSeed docs/tmp dependency tree, and any oracles/ tree (the original upstream
+# source -- MI firmware, stmlib, CloudSeed -- kept as a reference oracle under dsp/Recreation),
+# none of which we own or lint.
+HeaderFilterRegex: '^(?!.*[\\/](\.external|docs[\\/]tmp|oracles)[\\/]).*$'
+
+CheckOptions:
+  # --- Deliberate exception swallowing ------------------------------------------------------
+  # bugprone-empty-catch is right that a silent catch usually hides a bug. It is wrong about the
+  # one place this codebase needs one: a destructor has nobody to report to, and an exception
+  # leaving it calls std::terminate -- inside a DAW, that is the host going down. `@swallow`
+  # marks a catch that is deliberate and says why, so the exceptions are greppable in one command
+  # instead of scattered across NOLINTs nobody can enumerate.
+  bugprone-empty-catch.IgnoreCatchWithKeywords: '@TODO;@FIXME;@swallow'
+
+  # --- Namespaces: synthaxes::dsp::physix::core ----------------------------------------------
+  readability-identifier-naming.NamespaceCase: lower_case
+
+  # --- Types: CamelCase (upper), acronyms included (Stft, not STFT) ---------------------------
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.UnionCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.TypeTemplateParameterCase: CamelCase
+
+  # --- Functions & methods: lowerCamelCase (process, getResultHome) --------------------------
+  readability-identifier-naming.FunctionCase: camelBack
+  readability-identifier-naming.MethodCase: camelBack
+
+  # --- Data members ---------------------------------------------------------------------------
+  # Class members are private/protected by default and carry m_ + lowerCamelCase (m_sampleRate).
+  # Struct members are public by default and carry NO prefix (the struct keeps its field names;
+  # its constructor params take the leading _ instead). clang-tidy keys on ACCESS, not on the
+  # class/struct keyword, and those line up: PrivateMember/ProtectedMember == the m_ world,
+  # PublicMember == the struct-field world.
+  readability-identifier-naming.PrivateMemberPrefix: 'm_'
+  readability-identifier-naming.PrivateMemberCase: camelBack
+  readability-identifier-naming.ProtectedMemberPrefix: 'm_'
+  readability-identifier-naming.ProtectedMemberCase: camelBack
+  # Public members take m_ too. The exemption assumed public == "plain aggregate",
+  # which does not survive contact with the code: engine::Controllers is a class
+  # whose data is public, and those are members, not aggregate fields.
+  readability-identifier-naming.PublicMemberPrefix: 'm_'
+  readability-identifier-naming.PublicMemberCase: camelBack
+
+  # Static (class) data members: lowerCamelCase, NO m_ (per §4).
+  readability-identifier-naming.ClassMemberCase: camelBack
+
+  # --- Locals & parameters: lowerCamelCase ---------------------------------------------------
+  readability-identifier-naming.LocalVariableCase: camelBack
+  readability-identifier-naming.ParameterCase: camelBack
+  # ...but a struct constructor's params take a leading _ (the anti-shadow idiom). Exempt any
+  # _-prefixed parameter from the case rule so that idiom is not flagged wholesale.
+  readability-identifier-naming.ParameterIgnoredRegexp: '^_.*$'
+
+  # A local const/constexpr is NOT required to carry k (§6: k is for file/namespace/class
+  # scope). Leaving ConstexprVariable unset lets a namespace-scope constexpr fall through to
+  # GlobalConstant (k) while a local one falls through to LocalVariable (camelBack).
+  readability-identifier-naming.LocalConstantCase: camelBack
+
+  # --- Constants: k + CamelCase at file/namespace/class/static scope (kMaxFftSize, kTwoPi) ----
+  readability-identifier-naming.GlobalConstantPrefix: 'k'
+  readability-identifier-naming.GlobalConstantCase: CamelCase
+  readability-identifier-naming.ClassConstantPrefix: 'k'
+  readability-identifier-naming.ClassConstantCase: CamelCase
+  readability-identifier-naming.StaticConstantPrefix: 'k'
+  readability-identifier-naming.StaticConstantCase: CamelCase
+
+  # --- Enum enumerators: k + CamelCase (kBassoon, kGranular, kNumParams) ----------------------
+  # Unscoped enumerators leak into the surrounding scope, so they carry k like any
+  # other namespace-scope constant. A scoped enum qualifies its own names already --
+  # LogSeverity::kPanic says nothing LogSeverity::Panic does not -- so it does not.
+  readability-identifier-naming.EnumConstantPrefix: 'k'
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.ScopedEnumConstantPrefix: ''
+  readability-identifier-naming.ScopedEnumConstantCase: CamelCase
+
+  # --- Macros: UPPER_CASE (S, UNUSED, UNREACHABLE, NO_MOVE_OR_COPY) ---------------------------
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  # S() is a legitimate one-letter macro; do not let a length/format heuristic flag it.
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z]$'
