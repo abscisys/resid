@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "defines": [
+                "Platform=Linux",
+                "UNIX",
+                "DEBUG",
+                "GTEST",
+                "TEST_OUTPUT_HOME=\"dummy_test\"",
+                "AUDIO_SOURCE_FILE=\"dummy.wav\"",
+                "BMP_SOURCE_FILE=\"dummy.bmp\"",
+                "__cplusplus=202302L",
+                "ASSET_ROOT_DIRECTORY=\"dummy\""
+            ],
+            "includePath": [
+                "${workspaceFolder}/include/**"
+            ],
+            "cStandard": "c23",
+            "cppStandard": "c++23",
+            "intelliSenseMode": "linux-clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
