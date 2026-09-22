@@ -29,11 +29,11 @@ namespace synthaxes::hw::engine::sid
         };
 
         /// Advances the envelope by one cycle.
-        RESID_INLINE void clock();
+        inline void clock();
 
         /// Advances the envelope by several cycles.
         /// @param deltaT Number of cycles to advance.
-        RESID_INLINE void clock(CycleCount deltaT);
+        inline void clock(CycleCount deltaT);
 
         /// Resets the envelope to its power-on state.
         void reset();
@@ -57,7 +57,7 @@ namespace synthaxes::hw::engine::sid
 
         /// Current envelope level, used to scale the voice output.
         /// @return 8-bit envelope value.
-        RESID_INLINE Reg8 output();
+        inline Reg8 output();
 
     protected:
         Reg16 m_rateCounter;
@@ -95,8 +95,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - 1 cycle.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void EnvelopeGenerator::clock()
+    inline void EnvelopeGenerator::clock()
     {
         // Check for ADSR delay bug.
         // If the rate counter comparison value is set below the current value of the
@@ -199,8 +198,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - delta_t cycles.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void EnvelopeGenerator::clock(CycleCount deltaT)
+    inline void EnvelopeGenerator::clock(CycleCount deltaT)
     {
         // Check for ADSR delay bug.
         // If the rate counter comparison value is set below the current value of the
@@ -318,8 +316,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // Read the envelope generator output.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    Reg8 EnvelopeGenerator::output()
+    inline Reg8 EnvelopeGenerator::output()
     {
         return this->m_envelopeCounter;
     }

@@ -2,31 +2,22 @@
 
 #include <cstdint>
 
-// Define bool, true, and false for C++ compilers that lack these keywords.
-#define RESID_HAVE_BOOL 1
-
-#if !RESID_HAVE_BOOL
-typedef int bool;
-const bool true = 1;
-const bool false = 0;
-#endif
-
 // We could have used the smallest possible data type for each SID register,
 // however this would give a slower engine because of data type conversions.
-// An int is assumed to be at least 32 bits (necessary in the types reg24,
-// cycle_count, and sound_sample). GNU does not support 16-bit machines
+// An int is assumed to be at least 32 bits (necessary in the types Reg24,
+// CycleCount, and SoundSample). GNU does not support 16-bit machines
 // (GNU Coding Standards: Portability between CPUs), so this should be
 // a valid assumption.
 
-typedef unsigned int Reg4;
-typedef unsigned int Reg8;
-typedef unsigned int Reg12;
-typedef unsigned int Reg16;
-typedef unsigned int Reg24;
+using Reg4 = unsigned int;
+using Reg8 = unsigned int;
+using Reg12 = unsigned int;
+using Reg16 = unsigned int;
+using Reg24 = unsigned int;
 
-typedef int CycleCount;
-typedef int SoundSample;
-typedef SoundSample FcPoint[2];
+using CycleCount = int;
+using SoundSample = int;
+using FcPoint = SoundSample[2];
 
 /// SID chip revision to emulate. The two revisions differ in combined-waveform tables, filter
 /// cutoff curve and DC offsets.
@@ -50,5 +41,3 @@ extern "C"
 {
     extern const char* resid_version_string;
 }
-
-#define RESID_INLINE inline

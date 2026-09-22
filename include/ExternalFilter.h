@@ -31,19 +31,19 @@ namespace synthaxes::hw::engine::sid
 
         /// Advances the filter by one cycle.
         /// @param vi Filter input: the SID mixer output.
-        RESID_INLINE void clock(SoundSample vi);
+        inline void clock(SoundSample vi);
 
         /// Advances the filter by several cycles with a constant input.
         /// @param deltaT Number of cycles to advance.
         /// @param vi Filter input: the SID mixer output.
-        RESID_INLINE void clock(CycleCount deltaT, SoundSample vi);
+        inline void clock(CycleCount deltaT, SoundSample vi);
 
         /// Clears the filter state.
         void reset();
 
         /// Filtered audio output.
         /// @return Output sample (about 20 bits).
-        RESID_INLINE SoundSample output();
+        inline SoundSample output();
 
     protected:
         // Filter enabled.
@@ -73,8 +73,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - 1 cycle.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void ExternalFilter::clock(SoundSample vi)
+    inline void ExternalFilter::clock(SoundSample vi)
     {
         // This is handy for testing.
         if(!this->m_enabled)
@@ -103,8 +102,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - delta_t cycles.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void ExternalFilter::clock(CycleCount deltaT, SoundSample vi)
+    inline void ExternalFilter::clock(CycleCount deltaT, SoundSample vi)
     {
         // This is handy for testing.
         if(!this->m_enabled)
@@ -147,8 +145,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // Audio output (19.5 bits).
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    SoundSample ExternalFilter::output()
+    inline SoundSample ExternalFilter::output()
     {
         return this->m_vo;
     }

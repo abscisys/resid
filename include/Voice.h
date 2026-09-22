@@ -33,7 +33,7 @@ namespace synthaxes::hw::engine::sid
 
         /// Amplitude-modulated waveform output: oscillator times envelope, plus the D/A DC offset.
         /// @return Voice sample, ideally in [-2048*255, 2047*255].
-        RESID_INLINE SoundSample output();
+        inline SoundSample output();
 
     protected:
         WaveformGenerator m_wave;
@@ -58,8 +58,7 @@ namespace synthaxes::hw::engine::sid
     // Amplitude modulated waveform output.
     // Ideal range [-2048*255, 2047*255].
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    SoundSample Voice::output()
+    inline SoundSample Voice::output()
     {
         // Multiply oscillator output with envelope output.
         return static_cast<SoundSample>((this->m_wave.output() - this->m_waveZero) * this->m_envelope.output() + this->m_voiceDc);

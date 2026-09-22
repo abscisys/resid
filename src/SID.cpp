@@ -736,8 +736,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking with audio sampling - delta clocking picking nearest sample.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    int SID::clockFast(CycleCount& deltaT, short* buf, int n, int interleave)
+    inline int SID::clockFast(CycleCount& deltaT, short* buf, int n, int interleave)
     {
         int s = 0;
 
@@ -774,8 +773,7 @@ namespace synthaxes::hw::engine::sid
     // external filter attenuates frequencies above 16kHz, thus reducing
     // sampling noise.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    int SID::clockInterpolate(CycleCount& deltaT, short* buf, int n, int interleave)
+    inline int SID::clockInterpolate(CycleCount& deltaT, short* buf, int n, int interleave)
     {
         int s = 0;
         int i;
@@ -860,8 +858,7 @@ namespace synthaxes::hw::engine::sid
     // NB! the result of right shifting negative numbers is really
     // implementation dependent in the C++ standard.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    int SID::clockResampleInterpolate(CycleCount& deltaT, short* buf, int n, int interleave)
+    inline int SID::clockResampleInterpolate(CycleCount& deltaT, short* buf, int n, int interleave)
     {
         int s = 0;
 
@@ -951,8 +948,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking with audio sampling - cycle based with audio resampling.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    int SID::clockResampleFast(CycleCount& deltaT, short* buf, int n, int interleave)
+    inline int SID::clockResampleFast(CycleCount& deltaT, short* buf, int n, int interleave)
     {
         int s = 0;
 

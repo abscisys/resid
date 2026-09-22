@@ -147,10 +147,10 @@ namespace synthaxes::hw::engine::sid
 
     protected:
         static double i0(double x);
-        RESID_INLINE int clockFast(CycleCount& deltaT, short* buf, int n, int interleave);
-        RESID_INLINE int clockInterpolate(CycleCount& deltaT, short* buf, int n, int interleave);
-        RESID_INLINE int clockResampleInterpolate(CycleCount& deltaT, short* buf, int n, int interleave);
-        RESID_INLINE int clockResampleFast(CycleCount& deltaT, short* buf, int n, int interleave);
+        inline int clockFast(CycleCount& deltaT, short* buf, int n, int interleave);
+        inline int clockInterpolate(CycleCount& deltaT, short* buf, int n, int interleave);
+        inline int clockResampleInterpolate(CycleCount& deltaT, short* buf, int n, int interleave);
+        inline int clockResampleFast(CycleCount& deltaT, short* buf, int n, int interleave);
 
         Voice m_voice[3];
         Filter m_filter;

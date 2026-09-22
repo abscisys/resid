@@ -27,15 +27,15 @@ namespace synthaxes::hw::engine::sid
         void setChipModel(ChipModel model);
 
         /// Advances the oscillator by one cycle.
-        RESID_INLINE void clock();
+        inline void clock();
 
         /// Advances the oscillator by several cycles.
         /// @param deltaT Number of cycles to advance.
-        RESID_INLINE void clock(CycleCount deltaT);
+        inline void clock(CycleCount deltaT);
 
         /// Applies hard sync to the destination oscillator. Must be called after all three
         /// oscillators have been clocked, since they run in parallel.
-        RESID_INLINE void synchronize();
+        inline void synchronize();
 
         /// Resets the oscillator to its power-on state.
         void reset();
@@ -67,7 +67,7 @@ namespace synthaxes::hw::engine::sid
 
         /// Current waveform output for the selected waveform combination.
         /// @return 12-bit waveform value.
-        RESID_INLINE Reg12 output();
+        inline Reg12 output();
 
     protected:
         const WaveformGenerator* m_syncSource;
@@ -95,22 +95,22 @@ namespace synthaxes::hw::engine::sid
         // The gate bit is handled by the EnvelopeGenerator.
 
         // 16 possible combinations of waveforms.
-        RESID_INLINE Reg12 outputNone();
-        RESID_INLINE Reg12 outputT();
-        RESID_INLINE Reg12 outputS();
-        RESID_INLINE Reg12 outputSt();
-        RESID_INLINE Reg12 outputP();
-        RESID_INLINE Reg12 outputPT();
-        RESID_INLINE Reg12 outputPs();
-        RESID_INLINE Reg12 outputPst();
-        RESID_INLINE Reg12 outputN();
-        RESID_INLINE Reg12 outputNT();
-        RESID_INLINE Reg12 outputNS();
-        RESID_INLINE Reg12 outputNSt();
-        RESID_INLINE Reg12 outputNp();
-        RESID_INLINE Reg12 outputNpT();
-        RESID_INLINE Reg12 outputNps();
-        RESID_INLINE Reg12 outputNPST();
+        inline Reg12 outputNone();
+        inline Reg12 outputT();
+        inline Reg12 outputS();
+        inline Reg12 outputSt();
+        inline Reg12 outputP();
+        inline Reg12 outputPT();
+        inline Reg12 outputPs();
+        inline Reg12 outputPst();
+        inline Reg12 outputN();
+        inline Reg12 outputNT();
+        inline Reg12 outputNS();
+        inline Reg12 outputNSt();
+        inline Reg12 outputNp();
+        inline Reg12 outputNpT();
+        inline Reg12 outputNps();
+        inline Reg12 outputNPST();
 
         // Sample data for combinations of waveforms.
         static Reg8 wave6581St[];
@@ -141,8 +141,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - 1 cycle.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void WaveformGenerator::clock()
+    inline void WaveformGenerator::clock()
     {
         // No operation if test bit is set.
         if(this->m_test)
@@ -172,8 +171,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - delta_t cycles.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void WaveformGenerator::clock(CycleCount deltaT)
+    inline void WaveformGenerator::clock(CycleCount deltaT)
     {
         // No operation if test bit is set.
         if(this->m_test)
@@ -238,8 +236,7 @@ namespace synthaxes::hw::engine::sid
     // Note that the oscillators must be clocked exactly on the cycle when the
     // MSB is set high for hard sync to operate correctly. See SID::clock().
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void WaveformGenerator::synchronize()
+    inline void WaveformGenerator::synchronize()
     {
         // A special case occurs when a sync source is synced itself on the same
         // cycle as when its MSB is set high. In this case the destination will
@@ -259,8 +256,7 @@ namespace synthaxes::hw::engine::sid
     // No waveform:
     // Zero output.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNone()
+    inline Reg12 WaveformGenerator::outputNone()
     {
         return 0x000;
     }
@@ -272,8 +268,7 @@ namespace synthaxes::hw::engine::sid
     // left-shifted (half the resolution, full amplitude).
     // Ring modulation substitutes the MSB with MSB EOR sync_source MSB.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputT()
+    inline Reg12 WaveformGenerator::outputT()
     {
         Reg24 msb = (this->m_ringMod ? this->m_accumulator ^ this->m_syncSource->m_accumulator : this->m_accumulator) & 0x800000;
         return ((msb ? ~this->m_accumulator : this->m_accumulator) >> 11) & 0xfff;
@@ -282,8 +277,7 @@ namespace synthaxes::hw::engine::sid
     // Sawtooth:
     // The output is identical to the upper 12 bits of the accumulator.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputS()
+    inline Reg12 WaveformGenerator::outputS()
     {
         return this->m_accumulator >> 12;
     }
@@ -298,8 +292,7 @@ namespace synthaxes::hw::engine::sid
     // The test bit, when set to one, holds the pulse waveform output at 0xfff
     // regardless of the pulse width setting.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputP()
+    inline Reg12 WaveformGenerator::outputP()
     {
         return (this->m_test || (this->m_accumulator >> 12) >= this->m_pw) ? 0xfff : 0x000;
     }
@@ -323,8 +316,7 @@ namespace synthaxes::hw::engine::sid
     //
     // Since waveform output is 12 bits the output is left-shifted 4 times.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputN()
+    inline Reg12 WaveformGenerator::outputN()
     {
         return ((this->m_shiftRegister & 0x400000) >> 11) | ((this->m_shiftRegister & 0x100000) >> 10) | ((this->m_shiftRegister & 0x010000) >> 7) | ((this->m_shiftRegister & 0x002000) >> 5) | ((this->m_shiftRegister & 0x000800) >> 4) | ((this->m_shiftRegister & 0x000080) >> 1) |
                ((this->m_shiftRegister & 0x000010) << 1) | ((this->m_shiftRegister & 0x000004) << 2);
@@ -388,26 +380,22 @@ namespace synthaxes::hw::engine::sid
     // The sawtooth output is used to look up an OSC3 sample.
     // The sample is output if the pulse output is on.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputSt()
+    inline Reg12 WaveformGenerator::outputSt()
     {
         return this->m_waveSt[this->outputS()] << 4;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputPT()
+    inline Reg12 WaveformGenerator::outputPT()
     {
         return (this->m_wavePT[this->outputT() >> 1] << 4) & this->outputP();
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputPs()
+    inline Reg12 WaveformGenerator::outputPs()
     {
         return (this->m_wavePs[this->outputS()] << 4) & this->outputP();
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputPst()
+    inline Reg12 WaveformGenerator::outputPst()
     {
         return (this->m_wavePst[this->outputS()] << 4) & this->outputP();
     }
@@ -421,44 +409,37 @@ namespace synthaxes::hw::engine::sid
     // there is very little audible output from waveform combinations including
     // noise. We hope that nobody is actually using it.
     //
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNT()
+    inline Reg12 WaveformGenerator::outputNT()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNS()
+    inline Reg12 WaveformGenerator::outputNS()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNSt()
+    inline Reg12 WaveformGenerator::outputNSt()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNp()
+    inline Reg12 WaveformGenerator::outputNp()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNpT()
+    inline Reg12 WaveformGenerator::outputNpT()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNps()
+    inline Reg12 WaveformGenerator::outputNps()
     {
         return 0;
     }
 
-    RESID_INLINE
-    Reg12 WaveformGenerator::outputNPST()
+    inline Reg12 WaveformGenerator::outputNPST()
     {
         return 0;
     }
@@ -466,8 +447,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // Select one of 16 possible combinations of waveforms.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    Reg12 WaveformGenerator::output()
+    inline Reg12 WaveformGenerator::output()
     {
         // It may seem cleaner to use an array of member functions to return
         // waveform output; however a switch with inline functions is faster.

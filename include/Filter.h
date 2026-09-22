@@ -123,8 +123,7 @@ namespace synthaxes::hw::engine::sid
         /// @param voice2 Output of voice 2 (20 bits).
         /// @param voice3 Output of voice 3 (20 bits).
         /// @param extIn External audio input (EXT IN).
-        RESID_INLINE
-        void clock(SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
+        inline void clock(SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
 
         /// Advances the filter by several cycles with constant inputs.
         /// @param deltaT Number of cycles to advance.
@@ -132,8 +131,7 @@ namespace synthaxes::hw::engine::sid
         /// @param voice2 Output of voice 2 (20 bits).
         /// @param voice3 Output of voice 3 (20 bits).
         /// @param extIn External audio input (EXT IN).
-        RESID_INLINE
-        void clock(CycleCount deltaT, SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
+        inline void clock(CycleCount deltaT, SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
 
         /// Resets the registers and filter state to their power-on values.
         void reset();
@@ -234,8 +232,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - 1 cycle.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void Filter::clock(SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn)
+    inline void Filter::clock(SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn)
     {
         // Scale each voice down from 20 to 13 bits.
         voice1 >>= 7;
@@ -357,8 +354,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID clocking - delta_t cycles.
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    void Filter::clock(CycleCount deltaT, SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn)
+    inline void Filter::clock(CycleCount deltaT, SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn)
     {
         // Scale each voice down from 20 to 13 bits.
         voice1 >>= 7;
@@ -499,8 +495,7 @@ namespace synthaxes::hw::engine::sid
     // ----------------------------------------------------------------------------
     // SID audio output (20 bits).
     // ----------------------------------------------------------------------------
-    RESID_INLINE
-    SoundSample Filter::output()
+    inline SoundSample Filter::output()
     {
         // This is handy for testing.
         if(!this->m_enabled)
