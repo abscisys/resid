@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 1999  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 #include <cstdint>
@@ -47,18 +28,22 @@ typedef int CycleCount;
 typedef int SoundSample;
 typedef SoundSample FcPoint[2];
 
+/// SID chip revision to emulate. The two revisions differ in combined-waveform tables, filter
+/// cutoff curve and DC offsets.
 enum ChipModel : std::uint8_t
 {
-    kMos6581,
-    kMos8580
+    kMos6581, ///< Original NMOS SID: DC offsets in the waveform, voice and mixer stages, tanh-shaped cutoff curve.
+    kMos8580  ///< HMOS-II revision: no DC offsets, near-linear cutoff curve.
 };
 
+/// How SID::clock() turns the ~1 MHz chip output into samples at the requested sample rate.
+/// Listed from cheapest to most accurate; the resampling methods cost a FIR convolution per sample.
 enum SamplingMethod : std::uint8_t
 {
-    kSampleFast,
-    kSampleInterpolate,
-    kSampleResampleInterpolate,
-    kSampleResampleFast
+    kSampleFast,                ///< Clock in delta steps and pick the nearest sample. Fastest; aliases.
+    kSampleInterpolate,         ///< Clock every cycle and linearly interpolate between the two nearest samples.
+    kSampleResampleInterpolate, ///< Band-limited resampling with a Kaiser-windowed sinc FIR, linearly interpolated between small filter tables.
+    kSampleResampleFast         ///< Band-limited resampling with one large, non-interpolated FIR table. Faster, more memory.
 };
 
 extern "C"
@@ -67,13 +52,3 @@ extern "C"
 }
 
 #define RESID_INLINE inline
-
-#ifdef RESID_DLL
-#ifdef RESID_EXPORTS
-#define RESID_API __declspec(dllexport)
-#else
-#define RESID_API __declspec(dllimport)
-#endif // RESID_EXPORTS
-#else  // !RESID_DLL
-#define RESID_API
-#endif // RESID_DLL

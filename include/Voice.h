@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 2004  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 #include "EnvelopeGenerator.h"
@@ -26,19 +7,32 @@
 namespace synthaxes::hw::engine::sid
 {
 
-    class RESID_API Voice
+    /// One of the three SID voices: an oscillator (WaveformGenerator) whose output is amplitude
+    /// modulated by an envelope (EnvelopeGenerator) through the multiplying D/A converter.
+    class Voice
     {
     public:
+        /// Constructs a voice configured as a MOS6581.
         Voice();
 
+        /// Selects the chip revision, which sets the waveform tables and the D/A DC offsets.
+        /// @param model Chip revision to emulate.
         void setChipModel(ChipModel model);
-        void setSyncSource(Voice*);
+
+        /// Sets the voice whose oscillator drives this voice's hard sync and ring modulation.
+        /// @param source Voice providing the sync/ring-modulation signal.
+        void setSyncSource(Voice* source);
+
+        /// Resets the oscillator and envelope to their power-on state.
         void reset();
 
-        void writeControlReg(Reg8);
+        /// Writes the voice control register, shared by the oscillator (waveform, test, ring
+        /// modulation, sync) and the envelope (gate).
+        /// @param control Value written to the CONTROL register.
+        void writeControlReg(Reg8 control);
 
-        // Amplitude modulated waveform output.
-        // Range [-2048*255, 2047*255].
+        /// Amplitude-modulated waveform output: oscillator times envelope, plus the D/A DC offset.
+        /// @return Voice sample, ideally in [-2048*255, 2047*255].
         RESID_INLINE SoundSample output();
 
     protected:

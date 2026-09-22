@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 2004  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 #include "siddefs.h"
@@ -24,32 +5,44 @@
 namespace synthaxes::hw::engine::sid
 {
 
-    // ----------------------------------------------------------------------------
-    // The audio output stage in a Commodore 64 consists of two STC networks,
-    // a low-pass filter with 3-dB frequency 16kHz followed by a high-pass
-    // filter with 3-dB frequency 16Hz (the latter provided an audio equipment
-    // input impedance of 1kOhm).
-    // The STC networks are connected with a BJT supposedly meant to act as
-    // a unity gain buffer, which is not really how it works. A more elaborate
-    // model would include the BJT, however DC circuit analysis yields BJT
-    // base-emitter and emitter-base impedances sufficiently low to produce
-    // additional low-pass and high-pass 3dB-frequencies in the order of hundreds
-    // of kHz. This calls for a sampling frequency of several MHz, which is far
-    // too high for practical use.
-    // ----------------------------------------------------------------------------
-    class RESID_API ExternalFilter
+    /// The Commodore 64 audio output stage that follows the SID chip.
+    ///
+    /// It consists of two STC networks, a low-pass filter with 3-dB frequency 16kHz followed by a
+    /// high-pass filter with 3-dB frequency 16Hz (the latter provided an audio equipment input
+    /// impedance of 1kOhm). The STC networks are connected with a BJT supposedly meant to act as a
+    /// unity gain buffer, which is not really how it works. A more elaborate model would include
+    /// the BJT, however DC circuit analysis yields BJT base-emitter and emitter-base impedances
+    /// sufficiently low to produce additional low-pass and high-pass 3dB-frequencies in the order
+    /// of hundreds of kHz. This calls for a sampling frequency of several MHz, which is far too
+    /// high for practical use.
+    class ExternalFilter
     {
     public:
+        /// Constructs an enabled filter configured for a MOS6581.
         ExternalFilter();
 
+        /// Enables or bypasses the filter. When bypassed, only the mixer DC offset is removed.
+        /// @param enable True to filter, false to bypass.
         void enableFilter(bool enable);
+
+        /// Selects the chip revision, which sets the mixer DC offset to remove.
+        /// @param model Chip revision to emulate.
         void setChipModel(ChipModel model);
 
+        /// Advances the filter by one cycle.
+        /// @param vi Filter input: the SID mixer output.
         RESID_INLINE void clock(SoundSample vi);
+
+        /// Advances the filter by several cycles with a constant input.
+        /// @param deltaT Number of cycles to advance.
+        /// @param vi Filter input: the SID mixer output.
         RESID_INLINE void clock(CycleCount deltaT, SoundSample vi);
+
+        /// Clears the filter state.
         void reset();
 
-        // Audio output (20 bits).
+        /// Filtered audio output.
+        /// @return Output sample (about 20 bits).
         RESID_INLINE SoundSample output();
 
     protected:

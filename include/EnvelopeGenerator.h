@@ -7,37 +7,56 @@
 namespace synthaxes::hw::engine::sid
 {
 
-    // ----------------------------------------------------------------------------
-    // A 15 bit counter is used to implement the envelope rates, in effect
-    // dividing the clock to the envelope counter by the currently selected rate
-    // period.
-    // In addition, another counter is used to implement the exponential envelope
-    // decay, in effect further dividing the clock to the envelope counter.
-    // The period of this counter is set to 1, 2, 4, 8, 16, 30 at the envelope
-    // counter values 255, 93, 54, 26, 14, 6, respectively.
-    // ----------------------------------------------------------------------------
-    class RESID_API EnvelopeGenerator
+    /// ADSR envelope generator of one voice.
+    ///
+    /// A 15 bit counter is used to implement the envelope rates, in effect dividing the clock to
+    /// the envelope counter by the currently selected rate period. In addition, another counter is
+    /// used to implement the exponential envelope decay, in effect further dividing the clock to
+    /// the envelope counter. The period of this counter is set to 1, 2, 4, 8, 16, 30 at the
+    /// envelope counter values 255, 93, 54, 26, 14, 6, respectively.
+    class EnvelopeGenerator
     {
     public:
+        /// Constructs an envelope in its reset state (release, counter frozen at zero).
         EnvelopeGenerator();
 
+        /// Phase of the ADSR envelope.
         enum State : std::uint8_t
         {
-            kAttack,
-            kDecaySustain,
-            kRelease
+            kAttack,       ///< Counting up towards 0xff at the attack rate; entered when the gate bit is set.
+            kDecaySustain, ///< Counting down at the decay rate until the sustain level is reached.
+            kRelease       ///< Counting down at the release rate; entered when the gate bit is cleared.
         };
 
+        /// Advances the envelope by one cycle.
         RESID_INLINE void clock();
+
+        /// Advances the envelope by several cycles.
+        /// @param deltaT Number of cycles to advance.
         RESID_INLINE void clock(CycleCount deltaT);
+
+        /// Resets the envelope to its power-on state.
         void reset();
 
-        void writeControlReg(Reg8);
-        void writeAttackDecay(Reg8);
-        void writeSustainRelease(Reg8);
+        /// Writes the voice control register; only the gate bit (bit 0) is used here.
+        /// Setting the gate starts the attack, clearing it starts the release.
+        /// @param control Value written to the CONTROL register.
+        void writeControlReg(Reg8 control);
+
+        /// Writes the ATTACK/DECAY register.
+        /// @param attackDecay Attack rate in the high nibble, decay rate in the low nibble.
+        void writeAttackDecay(Reg8 attackDecay);
+
+        /// Writes the SUSTAIN/RELEASE register.
+        /// @param sustainRelease Sustain level in the high nibble, release rate in the low nibble.
+        void writeSustainRelease(Reg8 sustainRelease);
+
+        /// Reads the envelope as seen through the ENV3 register.
+        /// @return Current 8-bit envelope value.
         Reg8 readENV();
 
-        // 8-bit envelope output.
+        /// Current envelope level, used to scale the voice output.
+        /// @return 8-bit envelope value.
         RESID_INLINE Reg8 output();
 
     protected:

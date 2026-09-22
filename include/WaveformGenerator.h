@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 2004  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 #include "siddefs.h"
@@ -24,35 +5,68 @@
 namespace synthaxes::hw::engine::sid
 {
 
-    // ----------------------------------------------------------------------------
-    // A 24 bit accumulator is the basis for waveform generation. FREQ is added to
-    // the lower 16 bits of the accumulator each cycle.
-    // The accumulator is set to zero when TEST is set, and starts counting
-    // when TEST is cleared.
-    // The noise waveform is taken from intermediate bits of a 23 bit shift
-    // register. This register is clocked by bit 19 of the accumulator.
-    // ----------------------------------------------------------------------------
-    class RESID_API WaveformGenerator
+    /// Oscillator of one voice.
+    ///
+    /// A 24 bit accumulator is the basis for waveform generation. FREQ is added to the lower 16
+    /// bits of the accumulator each cycle. The accumulator is set to zero when TEST is set, and
+    /// starts counting when TEST is cleared. The noise waveform is taken from intermediate bits of
+    /// a 23 bit shift register. This register is clocked by bit 19 of the accumulator.
+    class WaveformGenerator
     {
     public:
+        /// Constructs an oscillator configured for a MOS6581 and synced to itself.
         WaveformGenerator();
 
-        void setSyncSource(WaveformGenerator*);
+        /// Sets the oscillator whose MSB drives hard sync and ring modulation of this one, and
+        /// makes this oscillator the sync destination of @p source.
+        /// @param source Oscillator providing the sync/ring-modulation signal.
+        void setSyncSource(WaveformGenerator* source);
+
+        /// Selects the chip revision, which sets the combined-waveform lookup tables.
+        /// @param model Chip revision to emulate.
         void setChipModel(ChipModel model);
 
+        /// Advances the oscillator by one cycle.
         RESID_INLINE void clock();
+
+        /// Advances the oscillator by several cycles.
+        /// @param deltaT Number of cycles to advance.
         RESID_INLINE void clock(CycleCount deltaT);
+
+        /// Applies hard sync to the destination oscillator. Must be called after all three
+        /// oscillators have been clocked, since they run in parallel.
         RESID_INLINE void synchronize();
+
+        /// Resets the oscillator to its power-on state.
         void reset();
 
-        void writeFreqLo(Reg8);
-        void writeFreqHi(Reg8);
-        void writePwLo(Reg8);
-        void writePwHi(Reg8);
-        void writeControlReg(Reg8);
+        /// Writes the low byte of the 16-bit frequency register.
+        /// @param freqLo FREQ LO value.
+        void writeFreqLo(Reg8 freqLo);
+
+        /// Writes the high byte of the 16-bit frequency register.
+        /// @param freqHi FREQ HI value.
+        void writeFreqHi(Reg8 freqHi);
+
+        /// Writes the low byte of the 12-bit pulse width register.
+        /// @param pwLo PW LO value.
+        void writePwLo(Reg8 pwLo);
+
+        /// Writes the high nibble of the 12-bit pulse width register.
+        /// @param pwHi PW HI value; only the low nibble is used.
+        void writePwHi(Reg8 pwHi);
+
+        /// Writes the voice control register: waveform select (high nibble), test, ring
+        /// modulation and sync bits. The gate bit is handled by the EnvelopeGenerator.
+        /// @param control Value written to the CONTROL register.
+        void writeControlReg(Reg8 control);
+
+        /// Reads the oscillator as seen through the OSC3 register.
+        /// @return Upper 8 bits of the waveform output.
         Reg8 readOSC();
 
-        // 12-bit waveform output.
+        /// Current waveform output for the selected waveform combination.
+        /// @return 12-bit waveform value.
         RESID_INLINE Reg12 output();
 
     protected:

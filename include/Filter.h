@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 2004  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 #include "siddefs.h"
@@ -25,126 +6,172 @@
 namespace synthaxes::hw::engine::sid
 {
 
-    // ----------------------------------------------------------------------------
-    // The SID filter is modeled with a two-integrator-loop biquadratic filter,
-    // which has been confirmed by Bob Yannes to be the actual circuit used in
-    // the SID chip.
-    //
-    // Measurements show that excellent emulation of the SID filter is achieved,
-    // except when high resonance is combined with high sustain levels.
-    // In this case the SID op-amps are performing less than ideally and are
-    // causing some peculiar behavior of the SID filter. This however seems to
-    // have more effect on the overall amplitude than on the color of the sound.
-    //
-    // The theory for the filter circuit can be found in "Microelectric Circuits"
-    // by Adel S. Sedra and Kenneth C. Smith.
-    // The circuit is modeled based on the explanation found there except that
-    // an additional inverter is used in the feedback from the bandpass output,
-    // allowing the summer op-amp to operate in single-ended mode. This yields
-    // inverted filter outputs with levels independent of Q, which corresponds with
-    // the results obtained from a real SID.
-    //
-    // We have been able to model the summer and the two integrators of the circuit
-    // to form components of an IIR filter.
-    // Vhp is the output of the summer, Vbp is the output of the first integrator,
-    // and Vlp is the output of the second integrator in the filter circuit.
-    //
-    // According to Bob Yannes, the active stages of the SID filter are not really
-    // op-amps. Rather, simple NMOS inverters are used. By biasing an inverter
-    // into its region of quasi-linear operation using a feedback resistor from
-    // input to output, a MOS inverter can be made to act like an op-amp for
-    // small signals centered around the switching threshold.
-    //
-    // Qualified guesses at SID filter schematics are depicted below.
-    //
-    // SID filter
-    // ----------
-    //
-    //     -----------------------------------------------
-    //    |                                               |
-    //    |            ---Rq--                            |
-    //    |           |       |                           |
-    //    |  ------------<A]-----R1---------              |
-    //    | |                               |             |
-    //    | |                        ---C---|      ---C---|
-    //    | |                       |       |     |       |
-    //    |  --R1--    ---R1--      |---Rs--|     |---Rs--|
-    //    |        |  |       |     |       |     |       |
-    //     ----R1--|-----[A>--|--R-----[A>--|--R-----[A>--|
-    //             |          |             |             |
-    // vi -----R1--           |             |             |
-    //
-    //                       vhp           vbp           vlp
-    //
-    //
-    // vi  - input voltage
-    // vhp - highpass output
-    // vbp - bandpass output
-    // vlp - lowpass output
-    // [A> - op-amp
-    // R1  - summer resistor
-    // Rq  - resistor array controlling resonance (4 resistors)
-    // R   - NMOS FET voltage controlled resistor controlling cutoff frequency
-    // Rs  - shunt resitor
-    // C   - capacitor
-    //
-    //
-    //
-    // SID integrator
-    // --------------
-    //
-    //                                   V+
-    //
-    //                                   |
-    //                                   |
-    //                              -----|
-    //                             |     |
-    //                             | ||--
-    //                              -||
-    //                   ---C---     ||->
-    //                  |       |        |
-    //                  |---Rs-----------|---- vo
-    //                  |                |
-    //                  |            ||--
-    // vi ----     -----|------------||
-    //        |   ^     |            ||->
-    //        |___|     |                |
-    //        -----     |                |
-    //          |       |                |
-    //          |---R2--                 |
-    //          |
-    //          R1                       V-
-    //          |
-    //          |
-    //
-    //          Vw
-    //
-    // ----------------------------------------------------------------------------
-    class RESID_API Filter
+    /// Programmable SID filter: a state-variable (two-integrator-loop biquad) filter with
+    /// high-, band- and low-pass outputs, followed by the mixer and master volume.
+    ///
+    /// The SID filter is modeled with a two-integrator-loop biquadratic filter,
+    /// which has been confirmed by Bob Yannes to be the actual circuit used in
+    /// the SID chip.
+    ///
+    /// Measurements show that excellent emulation of the SID filter is achieved,
+    /// except when high resonance is combined with high sustain levels.
+    /// In this case the SID op-amps are performing less than ideally and are
+    /// causing some peculiar behavior of the SID filter. This however seems to
+    /// have more effect on the overall amplitude than on the color of the sound.
+    ///
+    /// The theory for the filter circuit can be found in "Microelectric Circuits"
+    /// by Adel S. Sedra and Kenneth C. Smith.
+    /// The circuit is modeled based on the explanation found there except that
+    /// an additional inverter is used in the feedback from the bandpass output,
+    /// allowing the summer op-amp to operate in single-ended mode. This yields
+    /// inverted filter outputs with levels independent of Q, which corresponds with
+    /// the results obtained from a real SID.
+    ///
+    /// We have been able to model the summer and the two integrators of the circuit
+    /// to form components of an IIR filter.
+    /// Vhp is the output of the summer, Vbp is the output of the first integrator,
+    /// and Vlp is the output of the second integrator in the filter circuit.
+    ///
+    /// According to Bob Yannes, the active stages of the SID filter are not really
+    /// op-amps. Rather, simple NMOS inverters are used. By biasing an inverter
+    /// into its region of quasi-linear operation using a feedback resistor from
+    /// input to output, a MOS inverter can be made to act like an op-amp for
+    /// small signals centered around the switching threshold.
+    ///
+    /// Qualified guesses at SID filter schematics are depicted below.
+    ///
+    /// @verbatim
+    /// SID filter
+    /// ----------
+    ///
+    ///     -----------------------------------------------
+    ///    |                                               |
+    ///    |            ---Rq--                            |
+    ///    |           |       |                           |
+    ///    |  ------------<A]-----R1---------              |
+    ///    | |                               |             |
+    ///    | |                        ---C---|      ---C---|
+    ///    | |                       |       |     |       |
+    ///    |  --R1--    ---R1--      |---Rs--|     |---Rs--|
+    ///    |        |  |       |     |       |     |       |
+    ///     ----R1--|-----[A>--|--R-----[A>--|--R-----[A>--|
+    ///             |          |             |             |
+    /// vi -----R1--           |             |             |
+    ///
+    ///                       vhp           vbp           vlp
+    ///
+    ///
+    /// vi  - input voltage
+    /// vhp - highpass output
+    /// vbp - bandpass output
+    /// vlp - lowpass output
+    /// [A> - op-amp
+    /// R1  - summer resistor
+    /// Rq  - resistor array controlling resonance (4 resistors)
+    /// R   - NMOS FET voltage controlled resistor controlling cutoff frequency
+    /// Rs  - shunt resitor
+    /// C   - capacitor
+    ///
+    ///
+    ///
+    /// SID integrator
+    /// --------------
+    ///
+    ///                                   V+
+    ///
+    ///                                   |
+    ///                                   |
+    ///                              -----|
+    ///                             |     |
+    ///                             | ||--
+    ///                              -||
+    ///                   ---C---     ||->
+    ///                  |       |        |
+    ///                  |---Rs-----------|---- vo
+    ///                  |                |
+    ///                  |            ||--
+    /// vi ----     -----|------------||
+    ///        |   ^     |            ||->
+    ///        |___|     |                |
+    ///        -----     |                |
+    ///          |       |                |
+    ///          |---R2--                 |
+    ///          |
+    ///          R1                       V-
+    ///          |
+    ///          |
+    ///
+    ///          Vw
+    /// @endverbatim
+    class Filter
     {
     public:
+        /// Constructs an enabled filter configured for a MOS6581 and builds the FC-to-cutoff
+        /// tables for both chip revisions.
         Filter();
 
+        /// Enables or bypasses the filter. When bypassed, all inputs go straight to the mixer.
+        /// @param enable True to filter, false to bypass.
         void enableFilter(bool enable);
+
+        /// Selects the chip revision, which sets the cutoff curve and the mixer DC offset.
+        /// @param model Chip revision to emulate.
         void setChipModel(ChipModel model);
 
+        /// Advances the filter by one cycle.
+        /// @param voice1 Output of voice 1 (20 bits).
+        /// @param voice2 Output of voice 2 (20 bits).
+        /// @param voice3 Output of voice 3 (20 bits).
+        /// @param extIn External audio input (EXT IN).
         RESID_INLINE
         void clock(SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
+
+        /// Advances the filter by several cycles with constant inputs.
+        /// @param deltaT Number of cycles to advance.
+        /// @param voice1 Output of voice 1 (20 bits).
+        /// @param voice2 Output of voice 2 (20 bits).
+        /// @param voice3 Output of voice 3 (20 bits).
+        /// @param extIn External audio input (EXT IN).
         RESID_INLINE
         void clock(CycleCount deltaT, SoundSample voice1, SoundSample voice2, SoundSample voice3, SoundSample extIn);
+
+        /// Resets the registers and filter state to their power-on values.
         void reset();
 
-        // Write registers.
-        void writeFcLo(Reg8);
-        void writeFcHi(Reg8);
-        void writeResFilt(Reg8);
-        void writeModeVol(Reg8);
+        /// Writes the low 3 bits of the 11-bit cutoff frequency register.
+        /// @param fcLo FC LO value.
+        void writeFcLo(Reg8 fcLo);
 
-        // SID audio output (16 bits).
+        /// Writes the high 8 bits of the 11-bit cutoff frequency register.
+        /// @param fcHi FC HI value.
+        void writeFcHi(Reg8 fcHi);
+
+        /// Writes the RES/FILT register.
+        /// @param resFilt Resonance in the high nibble; in the low nibble, which inputs (voice 1-3,
+        ///                EXT IN) are routed through the filter.
+        void writeResFilt(Reg8 resFilt);
+
+        /// Writes the MODE/VOL register.
+        /// @param modeVol Voice 3 off (bit 7), high/band/low-pass select (bits 6-4) and master
+        ///                volume (low nibble).
+        void writeModeVol(Reg8 modeVol);
+
+        /// Mixed output: the unfiltered inputs plus the selected filter outputs, scaled by the
+        /// master volume.
+        /// @return Mixer output sample.
         SoundSample output();
 
-        // Spline functions.
+        /// Returns the spline interpolation points that map the FC register to the cutoff
+        /// frequency for the current chip revision.
+        /// @param[out] points Set to the first interpolation point.
+        /// @param[out] count Set to the number of points.
         void fcDefault(const FcPoint*& points, int& count);
+
+        /// Returns a plotter that writes into the active FC-to-cutoff table, for installing a
+        /// custom mapping with interpolate(p, p + n - 1, filter.fcPlotter(), 1.0). The x range of
+        /// the points must be [0, 2047], and the end points must be repeated since they are not
+        /// interpolated.
+        /// @return Plotter targeting the current cutoff table.
         PointPlotter<SoundSample> fcPlotter();
 
     protected:

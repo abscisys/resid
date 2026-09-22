@@ -1,22 +1,3 @@
-//  ---------------------------------------------------------------------------
-//  This file is part of reSID, a MOS6581 SID emulator engine.
-//  Copyright (C) 2004  Dag Lem <resid@nimrod.no>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//  ---------------------------------------------------------------------------
-
 #pragma once
 
 // Our objective is to construct a smooth interpolating single-valued function
@@ -120,9 +101,18 @@
 #endif
 
 
-// ----------------------------------------------------------------------------
-// Calculation of coefficients.
-// ----------------------------------------------------------------------------
+/// Computes the cubic f(x) = ax^3 + bx^2 + cx + d through (x1, y1) and (x2, y2) with slopes
+/// k1 and k2 at those points.
+/// @param x1 X of the first point.
+/// @param y1 Y of the first point.
+/// @param x2 X of the second point; must differ from @p x1.
+/// @param y2 Y of the second point.
+/// @param k1 Slope f'(x1).
+/// @param k2 Slope f'(x2).
+/// @param[out] a Cubic coefficient.
+/// @param[out] b Quadratic coefficient.
+/// @param[out] c Linear coefficient.
+/// @param[out] d Constant term.
 inline void cubicCoefficients(double x1, double y1, double x2, double y2, double k1, double k2, double& a, double& b, double& c, double& d)
 {
     double dx = x2 - x1, dy = y2 - y1;
@@ -133,9 +123,16 @@ inline void cubicCoefficients(double x1, double y1, double x2, double y2, double
     d = y1 - ((x1 * a + b) * x1 + c) * x1;
 }
 
-// ----------------------------------------------------------------------------
-// Evaluation of cubic polynomial by brute force.
-// ----------------------------------------------------------------------------
+/// Plots one cubic curve segment between x1 and x2, evaluating the polynomial at each step.
+/// @tparam PointPlotter Callable taking (double x, double y).
+/// @param x1 X of the segment start.
+/// @param y1 Y of the segment start.
+/// @param x2 X of the segment end.
+/// @param y2 Y of the segment end.
+/// @param k1 Slope at the segment start.
+/// @param k2 Slope at the segment end.
+/// @param plot Receives each computed point.
+/// @param res Step between plotted x values.
 template <class PointPlotter> inline void interpolateBruteForce(double x1, double y1, double x2, double y2, double k1, double k2, PointPlotter plot, double res)
 {
     double a, b, c, d;
@@ -154,9 +151,17 @@ template <class PointPlotter> inline void interpolateBruteForce(double x1, doubl
     }
 }
 
-// ----------------------------------------------------------------------------
-// Evaluation of cubic polynomial by forward differencing.
-// ----------------------------------------------------------------------------
+/// Plots one cubic curve segment between x1 and x2 using forward differencing: three additions
+/// per point instead of a polynomial evaluation. This is the default segment interpolator.
+/// @tparam PointPlotter Callable taking (double x, double y).
+/// @param x1 X of the segment start.
+/// @param y1 Y of the segment start.
+/// @param x2 X of the segment end.
+/// @param y2 Y of the segment end.
+/// @param k1 Slope at the segment start.
+/// @param k2 Slope at the segment end.
+/// @param plot Receives each computed point.
+/// @param res Step between plotted x values.
 template <class PointPlotter> inline void interpolateForwardDifference(double x1, double y1, double x2, double y2, double k1, double k2, PointPlotter plot, double res)
 {
     double a, b, c, d;
@@ -182,24 +187,35 @@ template <class PointPlotter> inline void interpolateForwardDifference(double x1
     }
 }
 
+/// X coordinate of an interpolation point.
+/// @param p Iterator to a two-element point.
+/// @return (*p)[0].
 template <class PointIter> inline double x(PointIter p)
 {
     return (*p)[0];
 }
 
+/// Y coordinate of an interpolation point.
+/// @param p Iterator to a two-element point.
+/// @return (*p)[1].
 template <class PointIter> inline double y(PointIter p)
 {
     return (*p)[1];
 }
 
-// ----------------------------------------------------------------------------
-// Evaluation of complete interpolating function.
-// Note that since each curve segment is controlled by four points, the
-// end points will not be interpolated. If extra control points are not
-// desirable, the end points can simply be repeated to ensure interpolation.
-// Note also that points of non-differentiability and discontinuity can be
-// introduced by repeating points.
-// ----------------------------------------------------------------------------
+/// Plots a smooth single-valued curve through a sequence of points (Catmull-Rom-like cubic
+/// segments; see the file comment).
+///
+/// Since each curve segment is controlled by four points, the end points will not be
+/// interpolated. If extra control points are not desirable, the end points can simply be
+/// repeated to ensure interpolation. Points of non-differentiability and discontinuity can be
+/// introduced by repeating points.
+/// @tparam PointIter Forward iterator to two-element (x, y) points, sorted by x.
+/// @tparam PointPlotter Callable taking (double x, double y).
+/// @param p0 First point.
+/// @param pn Last point (inclusive).
+/// @param plot Receives each computed point.
+/// @param res Step between plotted x values.
 template <class PointIter, class PointPlotter> inline void interpolate(PointIter p0, PointIter pn, PointPlotter plot, double res)
 {
     double k1, k2;
@@ -251,17 +267,21 @@ template <class PointIter, class PointPlotter> inline void interpolate(PointIter
 namespace synthaxes::hw::engine::sid
 {
 
-    // ----------------------------------------------------------------------------
-    // Class for plotting integers into an array.
-    // ----------------------------------------------------------------------------
+    /// Plotter for interpolate() that stores each point into an array: arr[F(x)] = F(y).
+    /// @tparam F Element type of the target array.
     template <class F> class PointPlotter
     {
     protected:
         F* m_f;
 
     public:
+        /// Constructs a plotter writing into @p arr.
+        /// @param arr Target array, indexed by x; must cover every plotted x.
         PointPlotter(F* arr): m_f(arr) {}
 
+        /// Stores one point, clamping negative y values to zero.
+        /// @param x Array index.
+        /// @param y Value to store.
         void operator()(double x, double y)
         {
             // Clamp negative values to zero.
